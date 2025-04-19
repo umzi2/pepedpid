@@ -1,16 +1,37 @@
-mod dpid;
+mod dpid_core;
 
+use ndarray::{Ix2, Ix3};
+use numpy::{ PyArrayDyn, PyArrayMethods, PyReadonlyArrayDyn, ToPyArray};
 use pyo3::prelude::*;
 
-/// Formats the sum of two numbers as string.
 #[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
+fn dpid_resize<'py>(
+    input: PyReadonlyArrayDyn<f32>,
+    h: usize,
+    w: usize,
+    l: f32,
+    py: Python<'py>,
+) -> Bound<'py, PyArrayDyn<f32>> {
+    let input = input.to_owned_array();
+    let input = py.allow_threads(|| {
+        if input.shape().len() != 2 {
+            dpid_core::dpid_resample_rgb(&input.into_dimensionality::<Ix3>().unwrap(), h, w, l)
+                .into_dyn()
+        } else {
+            dpid_core::dpid_resample_gray(
+                &input.into_dimensionality::<Ix2>().unwrap(),
+                h,
+                w,
+                l,
+            )
+            .into_dyn()
+        }
+    });
+    input.to_pyarray(py)
 }
 
-/// A Python module implemented in Rust.
 #[pymodule]
-fn dpid(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+fn pepedpid(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(dpid_resize, m)?)?;
     Ok(())
 }

@@ -1,9 +1,11 @@
 [build-system]
 requires = ["maturin>=1.8,<2.0"]
 build-backend = "maturin"
-
+dependencies = [
+    "numpy",
+]
 [project]
-name = "untitled6"
+name = "pepedpid"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
