@@ -23,3 +23,23 @@ def dpid_resize(
     Based on the method:
         "Rapid, Detail-Preserving Image Downscaling" (Cho et al., 2015)
     """
+def cubic_resize(
+    input:np.ndarray,
+    h:int,
+    w:int,
+)->np.ndarray:
+    """
+    Resizes the image using the bicubic interpolation method, following the MATLAB-style bicubic kernel.
+
+    Parameters:
+        input (np.ndarray): Input image in HWC or CHW format (depending on implementation).
+        h (int): Desired height of the output image.
+        w (int): Desired width of the output image.
+
+    Returns:
+        np.ndarray: Resized image of shape (h, w), interpolated using bicubic filtering for smooth transitions
+                    and natural-looking results, especially effective for photographic and continuous-tone content.
+
+    Based on the MATLAB-style bicubic interpolation:
+        Utilizes a 4x4 neighborhood with a cubic convolution kernel for computing pixel values.
+    """
