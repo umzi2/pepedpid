@@ -12,16 +12,17 @@ pip install pepeline pepedpid
 Usage example:
 ```py
 from pepeline import read, save, ImgFormat
-from pepedpid import dpid_resize
+from pepedpid import dpid_resize,cubic_resize
 
 # Load an image in f32 format (normalized [0,1])
 img = read("test.png", format=ImgFormat.F32)
 
 # Apply DPID resizing
-img = dpid_resize(img, 512, 512, 0.5)
-
+img_dpid = dpid_resize(img, 512, 512, 0.5)
+img_matlab_bicubic = cubic_resize(img,512,512)
 # Save the result
-save(img, "resize_test.png")
+save(img_dpid, "img_dpid.png")
+save(img_matlab_bicubic, "img_matlab_bicubic.png")
 ```
 
 # ⚙️ Arguments for `dpid_resize`
