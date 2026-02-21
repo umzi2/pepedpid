@@ -1,4 +1,5 @@
 use ndarray::{Array2, Array3, ArrayView2, ArrayView3};
+
 fn derive_scale(in_shape: (usize, usize), out_shape: (usize, usize)) -> (f32, f32) {
     (
         out_shape.0 as f32 / in_shape.0 as f32,
@@ -59,7 +60,8 @@ fn contributions(
             };
 
             weights[[i, j]] = weight;
-            let wrapped = ((idx % aux_len as isize + aux_len as isize) % aux_len as isize) as usize;
+            let wrapped =
+                ((idx % aux_len as isize + aux_len as isize) % aux_len as isize) as usize;
             indices[[i, j]] = aux[wrapped];
             sum += weight;
         }
@@ -71,7 +73,7 @@ fn contributions(
         }
     }
 
-    // Обрезка нулевых весов (сжимаем)
+    // Обрезка нулевых весов
     let mut active_cols = vec![];
     for j in 0..p {
         if weights.column(j).iter().any(|&v| v != 0.0) {
@@ -92,6 +94,7 @@ fn contributions(
 
     (w2, i2)
 }
+
 pub fn imresize3_mut(
     input: &ArrayView3<f32>,
     output: &mut Array3<f32>,
@@ -109,9 +112,9 @@ pub fn imresize3_mut(
     let mut result = input.to_owned();
     for &dim in &order {
         result = if dim == 0 {
-            unsafe { resize_along_dim3_mut(&result, &w0, &i0, 0) }
+            resize_along_dim3(&result, &w0, &i0, 0)
         } else {
-            unsafe { resize_along_dim3_mut(&result, &w1, &i1, 1) }
+            resize_along_dim3(&result, &w1, &i1, 1)
         };
     }
 
@@ -135,16 +138,17 @@ pub fn imresize2_mut(
     let mut result = input.to_owned();
     for &dim in &order {
         result = if dim == 0 {
-            unsafe { resize_along_dim2_mut(&result, &w0, &i0, 0) }
+            resize_along_dim2(&result, &w0, &i0, 0)
         } else {
-            unsafe { resize_along_dim2_mut(&result, &w1, &i1, 1) }
+            resize_along_dim2(&result, &w1, &i1, 1)
         };
     }
 
     output.assign(&result);
 }
 
-unsafe fn resize_along_dim3_mut(
+// ndarray 0.17: uninit() → Array<MaybeUninit<T>, D>, assume_init() — unsafe метод на нём
+fn resize_along_dim3(
     input: &Array3<f32>,
     weights: &Array2<f32>,
     indices: &Array2<usize>,
@@ -152,9 +156,16 @@ unsafe fn resize_along_dim3_mut(
 ) -> Array3<f32> {
     let (in_h, in_w, in_c) = input.dim();
     let (out_len, kernel_size) = weights.dim();
-    let mut output = match dim {
-        0 => Array3::<f32>::uninit((out_len, in_w, in_c)).assume_init(),
-        1 => Array3::<f32>::uninit((in_h, out_len, in_c)).assume_init(),
+
+    let mut output: Array3<f32> = match dim {
+        0 => {
+            let uninit = Array3::<f32>::uninit((out_len, in_w, in_c));
+            unsafe { uninit.assume_init() }
+        }
+        1 => {
+            let uninit = Array3::<f32>::uninit((in_h, out_len, in_c));
+            unsafe { uninit.assume_init() }
+        }
         _ => unreachable!(),
     };
 
@@ -162,7 +173,7 @@ unsafe fn resize_along_dim3_mut(
         for y in 0..out_len {
             for x in 0..in_w {
                 for c in 0..in_c {
-                    let mut acc = 0.0;
+                    let mut acc = 0.0f32;
                     for k in 0..kernel_size {
                         let idx = indices[[y, k]];
                         acc += weights[[y, k]] * input[[idx, x, c]];
@@ -175,7 +186,7 @@ unsafe fn resize_along_dim3_mut(
         for y in 0..in_h {
             for x in 0..out_len {
                 for c in 0..in_c {
-                    let mut acc = 0.0;
+                    let mut acc = 0.0f32;
                     for k in 0..kernel_size {
                         let idx = indices[[x, k]];
                         acc += weights[[x, k]] * input[[y, idx, c]];
@@ -189,7 +200,7 @@ unsafe fn resize_along_dim3_mut(
     output
 }
 
-unsafe fn resize_along_dim2_mut(
+fn resize_along_dim2(
     input: &Array2<f32>,
     weights: &Array2<f32>,
     indices: &Array2<usize>,
@@ -197,16 +208,23 @@ unsafe fn resize_along_dim2_mut(
 ) -> Array2<f32> {
     let (in_h, in_w) = input.dim();
     let (out_len, kernel_size) = weights.dim();
-    let mut output = match dim {
-        0 => Array2::<f32>::uninit((out_len, in_w)).assume_init(),
-        1 => Array2::<f32>::uninit((in_h, out_len)).assume_init(),
+
+    let mut output: Array2<f32> = match dim {
+        0 => {
+            let uninit = Array2::<f32>::uninit((out_len, in_w));
+            unsafe { uninit.assume_init() }
+        }
+        1 => {
+            let uninit = Array2::<f32>::uninit((in_h, out_len));
+            unsafe { uninit.assume_init() }
+        }
         _ => unreachable!(),
     };
 
     if dim == 0 {
         for y in 0..out_len {
             for x in 0..in_w {
-                let mut acc = 0.0;
+                let mut acc = 0.0f32;
                 for k in 0..kernel_size {
                     let idx = indices[[y, k]];
                     acc += weights[[y, k]] * input[[idx, x]];
@@ -217,7 +235,7 @@ unsafe fn resize_along_dim2_mut(
     } else {
         for y in 0..in_h {
             for x in 0..out_len {
-                let mut acc = 0.0;
+                let mut acc = 0.0f32;
                 for k in 0..kernel_size {
                     let idx = indices[[x, k]];
                     acc += weights[[x, k]] * input[[y, idx]];

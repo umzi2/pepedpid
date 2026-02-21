@@ -9,7 +9,7 @@ name = "pepedpid"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.24.0"
-ndarray = "0.16.1"
-numpy = "0.24.0"
+pyo3 = { version = "0.28.2", features = ["abi3-py310", "extension-module"] }
+ndarray = "0.17.2"
+numpy = "0.28.0"
 
