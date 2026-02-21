@@ -47,7 +47,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          working-directory: ~
+          working-directory: ~/
           container: 'off'
 
       - name: Upload Python wheels
@@ -72,7 +72,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
-          working-directory: ~
+          working-directory: ~/
           args: -o dist
   
       - name: Upload sdist
@@ -113,7 +113,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          working-directory: ~
+          working-directory: ~/
           manylinux: 'auto'
   
       - name: Upload Python wheels
@@ -160,7 +160,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          working-directory: ~
+          working-directory: ~/
 
       - name: Upload Python wheels
         uses: actions/upload-artifact@v4
